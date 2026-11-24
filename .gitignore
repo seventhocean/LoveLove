@@ -1,0 +1,12 @@
+# 凭据，绝不入库
+gen-image.env
+
+# 生成结果
+out/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# macOS
+.DS_Store

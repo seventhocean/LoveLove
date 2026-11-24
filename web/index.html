@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>生图工坊</title>
+<style>
+  :root{
+    --bg:#0e0f11;
+    --panel:#16181c;
+    --panel-2:#1d2025;
+    --line:#2a2e35;
+    --ink:#e8e6e1;
+    --ink-dim:#8b8d93;
+    --accent:#d8b47a;
+    --accent-dim:#8a7351;
+    --danger:#e06c5a;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:
+      radial-gradient(900px 500px at 15% -10%, rgba(216,180,122,.07), transparent 60%),
+      radial-gradient(700px 400px at 95% 110%, rgba(120,140,200,.05), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro SC","PingFang SC","Helvetica Neue",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{display:grid;grid-template-columns:400px 1fr;min-height:100vh}
+
+  /* ---------- 左栏 ---------- */
+  .side{
+    border-right:1px solid var(--line);
+    background:rgba(22,24,28,.72);
+    backdrop-filter:blur(12px);
+    padding:34px 30px 40px;
+    display:flex;flex-direction:column;gap:22px;
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand h1{
+    margin:0;font-size:23px;font-weight:600;letter-spacing:.5px;
+    font-family:Georgia,"Songti SC",serif;
+  }
+  .brand span{
+    font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--accent-dim);
+  }
+  .lede{margin:-8px 0 0;font-size:13px;color:var(--ink-dim);line-height:1.6}
+
+  .field{display:flex;flex-direction:column;gap:8px}
+  .label{
+    font-size:11px;letter-spacing:1.4px;text-transform:uppercase;
+    color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center;
+  }
+  .count{color:var(--accent-dim);font-variant-numeric:tabular-nums}
+
+  textarea{
+    width:100%;min-height:132px;resize:vertical;
+    background:var(--panel-2);color:var(--ink);
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:13px 14px;font:inherit;line-height:1.6;
+    outline:none;transition:border-color .18s,box-shadow .18s;
+  }
+  textarea:focus{border-color:var(--accent-dim);box-shadow:0 0 0 3px rgba(216,180,122,.08)}
+  textarea::placeholder{color:#5c6068}
+
+  select{
+    width:100%;appearance:none;
+    background:var(--panel-2) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%238b8d93'/></svg>") no-repeat right 14px center;
+    color:var(--ink);border:1px solid var(--line);border-radius:10px;
+    padding:10px 34px 10px 12px;font:inherit;font-size:14px;cursor:pointer;outline:none;
+  }
+  select:focus{border-color:var(--accent-dim)}
+
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+       background:var(--panel-2);padding:5px;border-radius:12px;border:1px solid var(--line)}
+  .seg button{
+    background:transparent;border:0;color:var(--ink-dim);font:inherit;font-size:13px;
+    padding:8px 4px;border-radius:8px;cursor:pointer;transition:.15s;
+  }
+  .seg button:hover{color:var(--ink)}
+  .seg button.on{background:var(--panel);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+
+  .row{display:grid;grid-template-columns:1fr 96px;gap:10px}
+
+  button.go{
+    margin-top:4px;
+    background:linear-gradient(180deg,#e2c08c,#c9a05f);
+    color:#1a1408;border:0;border-radius:12px;padding:13px;font:inherit;font-weight:600;
+    font-size:15px;letter-spacing:.3px;cursor:pointer;transition:.18s;
+    display:flex;align-items:center;justify-content:center;gap:9px;
+  }
+  button.go:hover:not(:disabled){filter:brightness(1.06);transform:translateY(-1px)}
+  button.go:active:not(:disabled){transform:translateY(0)}
+  button.go:disabled{opacity:.55;cursor:not-allowed;filter:grayscale(.25)}
+
+  .spinner{
+    width:15px;height:15px;border:2px solid rgba(26,20,8,.28);
+    border-top-color:#1a1408;border-radius:50%;animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .hint{font-size:12px;color:var(--ink-dim);display:flex;justify-content:space-between;min-height:18px}
+  .hint .elapsed{color:var(--accent);font-variant-numeric:tabular-nums}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{
+    background:var(--panel-2);border:1px solid var(--line);color:var(--ink-dim);
+    border-radius:99px;padding:5px 11px;font-size:12px;cursor:pointer;transition:.15s;
+  }
+  .chip:hover{border-color:var(--accent-dim);color:var(--ink)}
+
+  .err{
+    display:none;background:rgba(224,108,90,.1);border:1px solid rgba(224,108,90,.35);
+    color:#f0a294;border-radius:10px;padding:10px 12px;font-size:13px;word-break:break-word;
+  }
+  .err.show{display:block}
+
+  /* ---------- 右栏 ---------- */
+  .main{padding:34px 36px 60px;min-width:0}
+  .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .bar h2{
+    margin:0;font-size:12px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--ink-dim);font-weight:500;
+  }
+  .bar .n{font-size:12px;color:var(--accent-dim);font-variant-numeric:tabular-nums}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+  .card{
+    position:relative;border-radius:var(--radius);overflow:hidden;
+    background:var(--panel);border:1px solid var(--line);
+    animation:rise .35s ease both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .card img{display:block;width:100%;height:auto;cursor:zoom-in}
+  .card .cap{
+    display:flex;justify-content:space-between;align-items:center;gap:8px;
+    padding:9px 12px;font-size:11px;color:var(--ink-dim);
+    border-top:1px solid var(--line);
+  }
+  .card .cap a{
+    color:var(--accent);text-decoration:none;font-size:11px;letter-spacing:.5px;
+    border:1px solid rgba(216,180,122,.3);border-radius:6px;padding:3px 9px;
+    transition:.15s;white-space:nowrap;
+  }
+  .card .cap a:hover{background:rgba(216,180,122,.12)}
+
+  .skeleton{
+    aspect-ratio:2/3;border-radius:var(--radius);border:1px solid var(--line);
+    background:linear-gradient(100deg,var(--panel) 30%,var(--panel-2) 50%,var(--panel) 70%);
+    background-size:220% 100%;animation:shimmer 1.5s infinite;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--ink-dim);font-size:12px;letter-spacing:1px;
+  }
+  @keyframes shimmer{to{background-position:-120% 0}}
+
+  .empty{
+    border:1px dashed var(--line);border-radius:var(--radius);
+    padding:70px 20px;text-align:center;color:var(--ink-dim);font-size:13px;
+  }
+  .empty b{display:block;color:var(--ink);font-family:Georgia,serif;font-size:17px;
+           font-weight:500;margin-bottom:8px}
+
+  .lightbox{
+    position:fixed;inset:0;background:rgba(8,9,10,.94);display:none;
+    align-items:center;justify-content:center;z-index:99;padding:40px;cursor:zoom-out;
+  }
+  .lightbox.show{display:flex}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+
+  @media(max-width:860px){
+    .app{grid-template-columns:1fr}
+    .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+    .main{padding:24px 20px 50px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="side">
+    <div class="brand">
+      <h1>生图工坊</h1>
+      <span>YY AI</span>
+    </div>
+    <p class="lede">输入描述，选择比例，交给模型生成。单张通常需要 30–180 秒。</p>
+
+    <div class="field">
+      <div class="label"><span>提示词</span><span class="count" id="count">0 / 2000</span></div>
+      <textarea id="prompt" placeholder="描述你想要的画面：主体、光线、材质、构图、风格……"></textarea>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div class="field">
+      <div class="label"><span>模型</span></div>
+      <select id="model"></select>
+    </div>
+
+    <div class="field">
+      <div class="label"><span>尺寸</span></div>
+      <div class="seg" id="seg">
+        <button data-size="1024x1024">方图 1:1</button>
+        <button data-size="1024x1536" class="on">竖版 2:3</button>
+        <button data-size="1536x1024">横版 3:2</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="label"><span>数量</span></div>
+      <select id="num">
+        <option value="1">1 张</option>
+        <option value="2">2 张</option>
+        <option value="3">3 张</option>
+        <option value="4">4 张</option>
+      </select>
+    </div>
+
+    <button class="go" id="go">
+      <span id="goText">生成图片</span>
+    </button>
+
+    <div class="hint">
+      <span id="msg">⌘ + Enter 快速生成</span>
+      <span class="elapsed" id="elapsed"></span>
+    </div>
+
+    <div class="err" id="err"></div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <h2>作品</h2>
+      <span class="n" id="total"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="empty">
+      <b>还没有图片</b>
+      在左侧写下描述，点「生成图片」
+    </div>
+  </main>
+</div>
+
+<div class="lightbox" id="lightbox"><img id="lightboxImg" alt=""></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const SAMPLES = [
+  "黄昏的海边，穿风衣的人背对镜头，胶片颗粒",
+  "极简白色陶瓷茶具，柔和斜阳，产品摄影",
+  "雨夜霓虹街道，赛博朋克，浅景深",
+  "清晨森林薄雾，光束穿透树冠，电影感",
+];
+
+let size = "1024x1536";
+let busy = false;
+let timer = null;
+
+/* ---------- 初始化 ---------- */
+function initChips(){
+  const box = $("#chips");
+  SAMPLES.forEach(t => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.type = "button";
+    b.textContent = t.slice(0, 12) + "…";
+    b.title = t;
+    b.onclick = () => { $("#prompt").value = t; syncCount(); };
+    box.appendChild(b);
+  });
+}
+
+function syncCount(){
+  $("#count").textContent = `${$("#prompt").value.length} / 2000`;
+}
+
+async function loadModels(){
+  const sel = $("#model");
+  try{
+    const r = await fetch("/api/models");
+    const d = await r.json();
+    sel.innerHTML = "";
+    (d.models || []).forEach(m => {
+      const o = document.createElement("option");
+      o.value = m; o.textContent = m;
+      sel.appendChild(o);
+    });
+    sel.value = d.default || "gpt-image-1";
+  }catch(e){
+    sel.innerHTML = '<option value="gpt-image-1">gpt-image-1</option>';
+  }
+}
+
+async function loadRecent(){
+  try{
+    const r = await fetch("/api/recent");
+    const d = await r.json();
+    (d.images || []).forEach(i => addCard(i.url, i.name, i.kb));
+    refreshEmpty();
+  }catch(e){}
+}
+
+/* ---------- 渲染 ---------- */
+function addCard(url, name, kb){
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <img src="${url}" alt="" loading="lazy">
+    <div class="cap">
+      <span>${kb ? kb + " KB" : ""}</span>
+      <a href="${url}" download="${name}">下载</a>
+    </div>`;
+  card.querySelector("img").onclick = () => {
+    $("#lightboxImg").src = url;
+    $("#lightbox").classList.add("show");
+  };
+  $("#grid").prepend(card);
+  refreshEmpty();
+}
+
+function refreshEmpty(){
+  const has = $("#grid").children.length > 0;
+  $("#empty").style.display = has ? "none" : "block";
+  $("#total").textContent = has ? `${$("#grid").children.length} 张` : "";
+}
+
+function setBusy(on, text){
+  busy = on;
+  $("#go").disabled = on;
+  $("#goText").textContent = text || (on ? "生成中…" : "生成图片");
+  const sp = $("#go").querySelector(".spinner");
+  if(on && !sp){
+    const s = document.createElement("span");
+    s.className = "spinner";
+    $("#go").prepend(s);
+  }else if(!on && sp){
+    sp.remove();
+  }
+}
+
+function showErr(msg){
+  const e = $("#err");
+  e.textContent = msg;
+  e.classList.add("show");
+}
+
+/* ---------- 生成 ---------- */
+async function generate(){
+  const prompt = $("#prompt").value.trim();
+  if(!prompt || busy) return;
+  $("#err").classList.remove("show");
+
+  const n = +$("#num").value;
+  const model = $("#model").value;
+
+  setBusy(true, "生成中…");
+  $("#msg").textContent = "正在绘制，请稍候";
+
+  const t0 = Date.now();
+  timer = setInterval(() => {
+    $("#elapsed").textContent = ((Date.now() - t0) / 1000).toFixed(0) + "s";
+  }, 200);
+
+  // 占位骨架
+  const skels = [];
+  for(let i = 0; i < n; i++){
+    const s = document.createElement("div");
+    s.className = "skeleton";
+    s.textContent = "生成中";
+    $("#grid").prepend(s);
+    skels.push(s);
+  }
+
+  try{
+    const r = await fetch("/api/generate", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({prompt, model, size, n})
+    });
+    const d = await r.json();
+    skels.forEach(s => s.remove());
+
+    if(!r.ok || d.error){
+      showErr(d.error + (d.detail ? "\n" + d.detail : ""));
+      $("#msg").textContent = "生成失败";
+    }else{
+      (d.images || []).forEach(i => addCard(i.url, i.name, i.kb));
+      $("#msg").textContent = `完成 · ${d.elapsed}s · ${d.size}`;
+      $("#elapsed").textContent = "";
+    }
+  }catch(e){
+    skels.forEach(s => s.remove());
+    showErr("网络错误：" + e.message);
+    $("#msg").textContent = "生成失败";
+  }finally{
+    clearInterval(timer);
+    setBusy(false);
+    $("#elapsed").textContent = "";
+  }
+}
+
+/* ---------- 事件 ---------- */
+$("#prompt").addEventListener("input", syncCount);
+$("#go").onclick = generate;
+$("#prompt").addEventListener("keydown", e => {
+  if((e.metaKey || e.ctrlKey) && e.key === "Enter"){ e.preventDefault(); generate(); }
+});
+$("#seg").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if(!b) return;
+  [...$("#seg").children].forEach(x => x.classList.remove("on"));
+  b.classList.add("on");
+  size = b.dataset.size;
+});
+$("#lightbox").onclick = () => $("#lightbox").classList.remove("show");
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape") $("#lightbox").classList.remove("show");
+});
+
+initChips();
+syncCount();
+loadModels();
+loadRecent();
+</script>
+</body>
+</html>
